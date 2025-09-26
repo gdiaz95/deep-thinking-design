@@ -1,5 +1,5 @@
 defaults:
-  - problem: prefix_sums
+  - problem: mazes
   - override hydra/job_logging: custom
   - _self_
 
@@ -18,7 +18,7 @@ problem:
     test_iterations:
       low: 30
       high: 50
-    model_path:
+    model_path: ../../training_default/training-disposed-Leandrea
 
 quick_test: False
 
