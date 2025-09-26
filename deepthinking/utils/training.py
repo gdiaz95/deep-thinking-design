@@ -84,8 +84,8 @@ def train_progressive(net, loaders, train_setup, device):
     for batch_idx, (inputs, targets) in enumerate(tqdm(trainloader, leave=False)):
         inputs, targets = inputs.to(device), targets.to(device).long()
         targets = targets.view(targets.size(0), -1)
-        if problem == "mazes":
-            mask = inputs.view(inputs.size(0), inputs.size(1), -1).max(dim=1)[0] > 0
+        # if problem == "mazes":
+        #     mask = inputs.view(inputs.size(0), inputs.size(1), -1).max(dim=1)[0] > 0
 
         optimizer.zero_grad()
 
@@ -108,11 +108,11 @@ def train_progressive(net, loaders, train_setup, device):
         else:
             loss_progressive = torch.zeros_like(targets).float()
 
-        if problem == "mazes":
-            loss_max_iters = (loss_max_iters * mask)
-            loss_max_iters = loss_max_iters[mask > 0]
-            loss_progressive = (loss_progressive * mask)
-            loss_progressive = loss_progressive[mask > 0]
+        # if problem == "mazes":
+        #     loss_max_iters = (loss_max_iters * mask)
+        #     loss_max_iters = loss_max_iters[mask > 0]
+        #     loss_progressive = (loss_progressive * mask)
+        #     loss_progressive = loss_progressive[mask > 0]
 
         loss_max_iters_mean = loss_max_iters.mean()
         loss_progressive_mean = loss_progressive.mean()

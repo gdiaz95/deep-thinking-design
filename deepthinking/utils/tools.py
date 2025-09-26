@@ -57,7 +57,7 @@ def get_dataloaders(problem_args):
         raise ValueError(f"Invalid problem spec. {problem_args.name}")
 
 
-def get_model(model, width, max_iters, in_channels=3):
+def get_model(model, width, max_iters, in_channels=1):
     model = model.lower()
     net = getattr(models, model)(width=width, in_channels=in_channels, max_iters=max_iters)
     return net
@@ -121,7 +121,7 @@ def load_model_from_checkpoint(problem, model_args, device):
     epoch = 0
     optimizer = None
 
-    in_channels = 3
+    in_channels = 1
     if problem == "chess":
         in_channels = 12
 

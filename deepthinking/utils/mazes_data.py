@@ -26,7 +26,7 @@ def prepare_maze_loader(train_batch_size, test_batch_size, train_data, test_data
     train_data = MazeDataset("../../../data", train=True, size=train_data, download=False)
     testset = MazeDataset("../../../data", train=False, size=test_data, download=False)
 
-    train_split = int(0.8 * len(train_data))
+    train_split = int(1 * len(train_data))
 
     trainset, valset = torch.utils.data.random_split(train_data,
                                                      [train_split,

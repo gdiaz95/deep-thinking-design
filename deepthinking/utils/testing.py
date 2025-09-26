@@ -38,16 +38,16 @@ def get_predicted(inputs, outputs, problem):
     outputs = outputs.clone()
     predicted = outputs.argmax(1)
     predicted = predicted.view(predicted.size(0), -1)
-    if problem == "mazes":
-        predicted = predicted * (inputs.max(1)[0].view(inputs.size(0), -1))
-    elif problem == "chess":
-        outputs = outputs.view(outputs.size(0), outputs.size(1), -1)
-        top_2 = torch.topk(outputs[:, 1], 2, dim=1)[0].min(dim=1)[0]
-        top_2 = einops.repeat(top_2, "n -> n k", k=8)
-        top_2 = einops.repeat(top_2, "n m -> n m k", k=8).view(-1, 64)
-        outputs[:, 1][outputs[:, 1] < top_2] = -float("Inf")
-        outputs[:, 0] = -float("Inf")
-        predicted = outputs.argmax(1)
+    # if problem == "mazes":
+    #     predicted = predicted * (inputs.max(1)[0].view(inputs.size(0), -1))
+    # elif problem == "chess":
+    #     outputs = outputs.view(outputs.size(0), outputs.size(1), -1)
+    #     top_2 = torch.topk(outputs[:, 1], 2, dim=1)[0].min(dim=1)[0]
+    #     top_2 = einops.repeat(top_2, "n -> n k", k=8)
+    #     top_2 = einops.repeat(top_2, "n m -> n m k", k=8).view(-1, 64)
+    #     outputs[:, 1][outputs[:, 1] < top_2] = -float("Inf")
+    #     outputs[:, 0] = -float("Inf")
+    #     predicted = outputs.argmax(1)
 
     return predicted
 

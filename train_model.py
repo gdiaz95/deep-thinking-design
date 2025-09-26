@@ -36,6 +36,7 @@ import deepthinking.utils.logging_utils as lg
 @hydra.main(config_path="config", config_name="train_model_config")
 def main(cfg: DictConfig):
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    # device = "cpu"
     torch.backends.cudnn.benchmark = True
     log = logging.getLogger()
     log.info("\n_________________________________________________\n")
@@ -77,15 +78,15 @@ def main(cfg: DictConfig):
     best_so_far = False
 
     for epoch in range(start_epoch, cfg.problem.hyp.epochs):
-        loss, acc = dt.train(net, loaders, cfg.problem.hyp.train_mode, train_setup, device)
-        val_acc = dt.test(net, [loaders["val"]], cfg.problem.hyp.test_mode, [cfg.problem.model.max_iters],
+        loss, train_acc = dt.train(net, loaders, cfg.problem.hyp.train_mode, train_setup, device)
+        val_acc = dt.test(net, [loaders["test"]], cfg.problem.hyp.test_mode, [cfg.problem.model.max_iters],
                           cfg.problem.name, device)[0][cfg.problem.model.max_iters]
         if val_acc > highest_val_acc_so_far:
             best_so_far = True
             highest_val_acc_so_far = val_acc
 
         log.info(f"Training loss at epoch {epoch}: {loss}")
-        log.info(f"Training accuracy at epoch {epoch}: {acc}")
+        log.info(f"Training accuracy at epoch {epoch}: {train_acc}")
         log.info(f"Val accuracy at epoch {epoch}: {val_acc}")
 
         # if the loss is nan, then stop the training
@@ -94,7 +95,7 @@ def main(cfg: DictConfig):
 
         # TensorBoard loss writing
         writer.add_scalar("Loss/loss", loss, epoch)
-        writer.add_scalar("Accuracy/acc", acc, epoch)
+        writer.add_scalar("Accuracy/train_acc", train_acc, epoch)
         writer.add_scalar("Accuracy/val_acc", val_acc, epoch)
 
         for i in range(len(optimizer.param_groups)):
@@ -103,24 +104,24 @@ def main(cfg: DictConfig):
                               epoch)
 
         # evaluate the model periodically and at the final epoch
-        if (epoch + 1) % cfg.problem.hyp.val_period == 0 or epoch + 1 == cfg.problem.hyp.epochs:
-            test_acc, val_acc, train_acc = dt.test(net,
-                                                   [loaders["test"],
-                                                    loaders["val"],
-                                                    loaders["train"]],
-                                                   cfg.problem.hyp.test_mode,
-                                                   cfg.problem.model.test_iterations,
-                                                   cfg.problem.name,
-                                                   device)
-            log.info(f"Training accuracy: {train_acc}")
-            log.info(f"Val accuracy: {val_acc}")
-            log.info(f"Test accuracy (hard data): {test_acc}")
+        # if (epoch + 1) % cfg.problem.hyp.val_period == 0 or epoch + 1 == cfg.problem.hyp.epochs:
+        #     test_acc, val_acc, train_acc = dt.test(net,
+        #                                            [loaders["test"],
+        #                                             loaders["val"],
+        #                                             loaders["train"]],
+        #                                            cfg.problem.hyp.test_mode,
+        #                                            cfg.problem.model.test_iterations,
+        #                                            cfg.problem.name,
+        #                                            device)
+        #     log.info(f"Training accuracy: {train_acc}")
+        #     log.info(f"Val accuracy: {val_acc}")
+        #     log.info(f"Test accuracy (hard data): {test_acc}")
 
-            tb_last = cfg.problem.model.test_iterations[-1]
-            lg.write_to_tb([train_acc[tb_last], val_acc[tb_last], test_acc[tb_last]],
-                           ["train_acc", "val_acc", "test_acc"],
-                           epoch,
-                           writer)
+        #     tb_last = cfg.problem.model.test_iterations[-1]
+        #     lg.write_to_tb([train_acc[tb_last], val_acc[tb_last], test_acc[tb_last]],
+        #                    ["train_acc", "val_acc", "test_acc"],
+        #                    epoch,
+        #                    writer)
         # check to see if we should save
         save_now = (epoch + 1) % cfg.problem.hyp.save_period == 0 or \
                    (epoch + 1) == cfg.problem.hyp.epochs or best_so_far
@@ -136,13 +137,12 @@ def main(cfg: DictConfig):
     # save some accuracy stats (can be used without testing to discern which models trained)
     stats = OrderedDict([("max_iters", cfg.problem.model.max_iters),
                          ("run_id", cfg.run_id),
-                         ("test_acc", test_acc),
+                         ("test_acc", val_acc),
                          ("test_data", cfg.problem.test_data),
                          ("test_iters", list(cfg.problem.model.test_iterations)),
                          ("test_mode", cfg.problem.hyp.test_mode),
                          ("train_data", cfg.problem.train_data),
-                         ("train_acc", train_acc),
-                         ("val_acc", val_acc)])
+                         ("train_acc", train_acc)])
     with open(os.path.join("stats.json"), "w") as fp:
         json.dump(stats, fp)
     log.info(stats)
