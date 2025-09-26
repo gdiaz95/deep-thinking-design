@@ -1,5 +1,5 @@
 defaults:
-  - problem: prefix_sums
+  - problem: mazes
   - override hydra/job_logging: custom
   - _self_
 

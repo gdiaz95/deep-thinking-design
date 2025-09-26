@@ -3,7 +3,7 @@ defaults:
   - model: dt_net_recall_2d
 
 name: mazes
-test_data: 33
+test_data: 9
 train_data: 9
 
 model:
