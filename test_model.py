@@ -60,7 +60,7 @@ def main(cfg: DictConfig):
     #               Dataset and Network and Optimizer
     loaders = dt.utils.get_dataloaders(cfg.problem)
 
-    cfg.problem.model.model_path = os.path.join(cfg.problem.model.model_path, "model_best.pth")
+    cfg.problem.model.model_path = os.path.join(cfg.problem.model.model_path, "model_.pth")
     net, start_epoch, optimizer_state_dict = dt.utils.load_model_from_checkpoint(cfg.problem.name,
                                                                                  cfg.problem.model,
                                                                                  device)
@@ -78,7 +78,7 @@ def main(cfg: DictConfig):
                                      cfg.problem.model.test_iterations["high"] + 1))
 
     if cfg.quick_test:
-        test_acc = dt.test(net, [loaders["test"]], cfg.problem.hyp.test_mode, test_iterations, cfg.problem.name, device)
+        test_acc = dt.test(net, [loaders["test"]], cfg.problem.hyp.test_mode, test_iterations, cfg.problem.name, device, cfg.plot)
         test_acc = test_acc[0]
         val_acc, train_acc = None, None
     else:

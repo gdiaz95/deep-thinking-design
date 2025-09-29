@@ -13,7 +13,12 @@ import einops
 import torch
 from icecream import ic
 from tqdm import tqdm
-
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import os
+import numpy as np
+import logging
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 # Ignore statements for pylint:
 #     Too many branches (R0912), Too many statements (R0915), No member (E1101),
 #     Not callable (E1102), Invalid name (C0103), No exception (W0702),
@@ -21,13 +26,13 @@ from tqdm import tqdm
 # pylint: disable=R0912, R0915, E1101, E1102, C0103, W0702, R0914, C0116, C0115, C0114
 
 
-def test(net, loaders, mode, iters, problem, device):
+def test(net, loaders, mode, iters, problem, device, plot):
     accs = []
     for loader in loaders:
         if mode == "default":
-            accuracy = test_default(net, loader, iters, problem, device)
+            accuracy = test_default(net, loader, iters, problem, device, plot)
         elif mode == "max_conf":
-            accuracy = test_max_conf(net, loader, iters, problem, device)
+            accuracy = test_max_conf(net, loader, iters, problem, device, plot)
         else:
             raise ValueError(f"{ic.format()}: test_{mode}() not implemented.")
         accs.append(accuracy)
@@ -51,19 +56,56 @@ def get_predicted(inputs, outputs, problem):
 
     return predicted
 
+def make_gif(inputs, targets, all_outputs, i):
+    if hasattr(inputs, 'cpu'):
+        inputs = inputs.detach().cpu().numpy()
+    if hasattr(targets, 'cpu'):
+        targets = targets.detach().cpu().numpy()
+    if hasattr(all_outputs, 'cpu'):
+        all_outputs = all_outputs.detach().cpu().numpy()
+    output_dir = "animation_frames"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    batch_size = inputs.shape[0]
+    for batch_idx in range(batch_size):
+        input_data = inputs[batch_idx]
+        output_frames = all_outputs[batch_idx,:,1]
+        target_data = targets[batch_idx].reshape(3, 3)
+        fig, ax = plt.subplots()
+        num_animation_frames = 1 + len(output_frames) + 1
+        def update(frame_number):
+            ax.clear()
+            if frame_number == 0:
+                ax.plot(np.arange(len(input_data)), input_data, color='blue')
+                ax.set_title("Input")
+            elif 1 <= frame_number <= 5:
+                image_index = frame_number - 1
+                ax.imshow(output_frames[image_index], cmap='gray_r')
+                ax.set_title(f"Intermediate Frame {image_index + 1}")
+            else:
+                ax.imshow(target_data, cmap='gray_r')
+                ax.set_title("Real Answer", color='green')
+            ax.set_xticks([])
+            ax.set_yticks([])
+        ani = FuncAnimation(fig, update, frames=num_animation_frames, interval=1000, repeat=True)
+        unique_id = (i * batch_size) + batch_idx
+        filename = os.path.join(output_dir, f"animation_sample_{unique_id}.gif")
+        ani.save(filename, writer='pillow', fps=1)
+        plt.close(fig)
+    return
 
-def test_default(net, testloader, iters, problem, device):
+def test_default(net, testloader, iters, problem, device, plot):
     max_iters = max(iters)
     net.eval()
     corrects = torch.zeros(max_iters)
     total = 0
 
     with torch.no_grad():
-        for inputs, targets in tqdm(testloader, leave=False):
+        for i, (inputs, targets) in enumerate(tqdm(testloader, leave=False)):
             inputs, targets = inputs.to(device), targets.to(device)
-
             all_outputs = net(inputs, iters_to_do=max_iters)
-
+            if plot:
+                make_gif(inputs,targets,all_outputs,i)
             for i in range(all_outputs.size(1)):
                 outputs = all_outputs[:, i]
                 predicted = get_predicted(inputs, outputs, problem)
@@ -71,6 +113,7 @@ def test_default(net, testloader, iters, problem, device):
                 corrects[i] += torch.amin(predicted == targets, dim=[1]).sum().item()
 
             total += targets.size(0)
+            i += 1
 
     accuracy = 100.0 * corrects / total
     ret_acc = {}
