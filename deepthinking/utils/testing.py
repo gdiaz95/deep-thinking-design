@@ -75,10 +75,11 @@ def make_gif(inputs, targets, all_outputs, i):
         num_animation_frames = 1 + len(output_frames) + 1
         def update(frame_number):
             ax.clear()
+            num_intermediate_frames = output_frames.shape[0]
             if frame_number == 0:
                 ax.plot(np.arange(len(input_data)), input_data, color='blue')
                 ax.set_title("Input")
-            elif 1 <= frame_number <= 5:
+            elif 1 <= frame_number <= num_intermediate_frames:
                 image_index = frame_number - 1
                 ax.imshow(output_frames[image_index], cmap='gray_r')
                 ax.set_title(f"Intermediate Frame {image_index + 1}")
