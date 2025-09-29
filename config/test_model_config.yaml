@@ -16,9 +16,9 @@ name: testing_default
 problem:
   model:
     test_iterations:
-      low: 30
-      high: 50
-    model_path: ../../training_default/training-disposed-Leandrea
+      low: 0
+      high: 10
+    model_path: ../../training_default/training-estrous-Joseh
 
-quick_test: False
-
+quick_test: True
+plot: True
